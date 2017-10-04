@@ -63,6 +63,26 @@ class ValueIterationAgent(ValueEstimationAgent):
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
 
+        states = self.mdp.getStates()
+        self.values.incrementAll(states, 0)
+        preVk = self.values.copy()
+
+        for i in range(self.iterations):
+            for state in states:
+                if self.mdp.isTerminal(state):
+                    continue
+                actions = self.mdp.getPossibleActions(state)
+                tmpList = []
+                for action in actions:
+                    # (nextState, T) = self.mdp.getTransitionStatesAndProbs(state, action)
+                    stPair = self.mdp.getTransitionStatesAndProbs(state, action)
+                    tmp = 0
+                    for i in range(len(stPair)):
+                        tmp += stPair[i][1] * (self.mdp.getReward(state, action, stPair[i][0]) + self.discount * preVk[stPair[i][0]])
+                    tmpList.append(tmp)
+                self.values[state] = max(tmpList)
+            preVk = self.values.copy()
+
 
     def getValue(self, state):
         """
@@ -77,6 +97,11 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
+        stPair = self.mdp.getTransitionStatesAndProbs(state, action)
+        tmp = 0
+        for i in range(len(stPair)):
+            tmp += stPair[i][1] * (self.mdp.getReward(state, action, stPair[i][0]) + self.discount * self.getValue(stPair[i][0]))
+        return tmp
         util.raiseNotDefined()
 
     def computeActionFromValues(self, state):
@@ -88,7 +113,14 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
+        if self.mdp.isTerminal(state):
+            return None
+        actions = self.mdp.getPossibleActions(state)
+        QList = util.Counter()
+        for action in actions:
+            QList[action] = self.computeQValueFromValues(state, action)
+        return QList.argMax()
+
         util.raiseNotDefined()
 
     def getPolicy(self, state):
@@ -130,6 +162,25 @@ class AsynchronousValueIterationAgent(ValueIterationAgent):
 
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
+        states = self.mdp.getStates()
+        self.values.incrementAll(states, 0)
+        for i in range(self.iterations):
+            state = states[i % len(states)]
+            if self.mdp.isTerminal(state):
+                continue
+            actions = self.mdp.getPossibleActions(state)
+            tmpList = []
+            for action in actions:
+                # (nextState, T) = self.mdp.getTransitionStatesAndProbs(state, action)
+                stPair = self.mdp.getTransitionStatesAndProbs(state, action)
+                tmp = 0
+                for i in range(len(stPair)):
+                    tmp += stPair[i][1] * (
+                    self.mdp.getReward(state, action, stPair[i][0]) + self.discount * self.values[stPair[i][0]])
+                tmpList.append(tmp)
+            self.values[state] = max(tmpList)
+
+
 
 class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
     """
@@ -151,3 +202,66 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
 
+        # Find predecessors
+        states = self.mdp.getStates()
+        predecessorsList = {}
+        for state in states:
+            pre = set([])
+            for preState in states:
+                if preState in pre:
+                    continue
+                if self.mdp.isTerminal(preState):
+                    continue
+                actions = self.mdp.getPossibleActions(preState)
+                for action in actions:
+                    flag = False
+                    stPairs = self.mdp.getTransitionStatesAndProbs(preState, action)
+                    for stPair in stPairs:
+                        if stPair[0] == state and stPair[1] > 0:
+                            flag = True
+                            break
+                    if flag:
+                        pre.add(preState)
+                        break
+            predecessorsList[state] = pre
+
+        # Priority Queue
+        pQueue = util.PriorityQueue()
+
+        for state in states:
+            if self.mdp.isTerminal(state):
+                continue
+            actions = self.mdp.getPossibleActions(state)
+            QList = [self.getQValue(state, action) for action in actions]
+            diff = abs(self.values[state] - max(QList))
+            '''
+            equivalent to diff = abs(max(QList)) since self.values haven't been udpated
+            '''
+            pQueue.update(state, -1. * diff)
+
+        # Iterations
+        for i in range(self.iterations):
+            if pQueue.isEmpty():
+                break
+            state = pQueue.pop()
+            if not self.mdp.isTerminal(state):
+                actions = self.mdp.getPossibleActions(state)
+                tmpList = []
+                for action in actions:
+                    # (nextState, T) = self.mdp.getTransitionStatesAndProbs(state, action)
+                    stPair = self.mdp.getTransitionStatesAndProbs(state, action)
+                    tmp = 0
+                    for i in range(len(stPair)):
+                        tmp += stPair[i][1] * (
+                            self.mdp.getReward(state, action, stPair[i][0]) + self.discount * self.values[stPair[i][0]])
+                    tmpList.append(tmp)
+                self.values[state] = max(tmpList)
+
+            predecessors = predecessorsList[state]
+            for predecessor in predecessors:
+                actions = self.mdp.getPossibleActions(predecessor)
+                QList = [self.getQValue(predecessor, action) for action in actions]
+                diff = abs(self.values[predecessor] - max(QList))
+
+                if diff > self.theta:
+                    pQueue.update(predecessor, -1. * diff)
