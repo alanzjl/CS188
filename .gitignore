@@ -1,3 +1,4 @@
 *.pyc
 **/.idea
 *.token
+*.DS_Store
