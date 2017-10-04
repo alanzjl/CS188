@@ -43,6 +43,7 @@ class QLearningAgent(ReinforcementAgent):
         ReinforcementAgent.__init__(self, **args)
 
         "*** YOUR CODE HERE ***"
+        self.Qvalue = util.Counter()
 
     def getQValue(self, state, action):
         """
@@ -51,6 +52,7 @@ class QLearningAgent(ReinforcementAgent):
           or the Q node value otherwise
         """
         "*** YOUR CODE HERE ***"
+        return self.Qvalue[(state, action)]
         util.raiseNotDefined()
 
 
@@ -62,6 +64,13 @@ class QLearningAgent(ReinforcementAgent):
           terminal state, you should return a value of 0.0.
         """
         "*** YOUR CODE HERE ***"
+        actions = self.getLegalActions(state)
+        if len(actions) < 1:
+            return 0.0
+        else:
+            Qvalue = [self.getQValue(state, action) for action in actions]
+            return max(Qvalue)
+
         util.raiseNotDefined()
 
     def computeActionFromQValues(self, state):
@@ -71,6 +80,18 @@ class QLearningAgent(ReinforcementAgent):
           you should return None.
         """
         "*** YOUR CODE HERE ***"
+        actions = self.getLegalActions(state)
+        if actions == None:
+            return None
+        QList = util.Counter()
+        choiceList = []
+        for action in actions:
+            QList[action] = self.getQValue(state, action)
+        for action in actions:
+            if abs(QList[action] - QList[QList.sortedKeys()[0]]) < 1e-5:
+                choiceList.append(action)
+        return random.choice(choiceList)
+
         util.raiseNotDefined()
 
     def getAction(self, state):
@@ -88,9 +109,14 @@ class QLearningAgent(ReinforcementAgent):
         legalActions = self.getLegalActions(state)
         action = None
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        if len(legalActions) < 1:
+            return None
+        if (random.random() < self.epsilon):
+            action = legalActions[random.choice(range(len(legalActions)))]
+        else:
+            action = self.computeActionFromQValues(state)
         return action
+        util.raiseNotDefined()
 
     def update(self, state, action, nextState, reward):
         """
@@ -102,7 +128,14 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        actions = self.getLegalActions(nextState)
+        sample = reward
+        if len(actions) > 0:
+            nextQ = [self.getQValue(nextState, act) for act in actions]
+            sample += self.discount * max(nextQ)
+        self.Qvalue[(state, action)] = (1. - self.alpha) * self.getQValue(state, action) + self.alpha * sample
+        # util.raiseNotDefined()
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
@@ -165,6 +198,7 @@ class ApproximateQAgent(PacmanQAgent):
           where * is the dotProduct operator
         """
         "*** YOUR CODE HERE ***"
+        return self.weights * self.featExtractor.getFeatures(state, action)
         util.raiseNotDefined()
 
     def update(self, state, action, nextState, reward):
@@ -172,7 +206,15 @@ class ApproximateQAgent(PacmanQAgent):
            Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        nextActs = self.getLegalActions(nextState)
+        diff = reward - self.getQValue(state, action)
+        if len(nextActs) > 0:
+            QList = [self.getQValue(nextState, act) for act in nextActs]
+            diff += self.discount * max(QList)
+        for i in self.featExtractor.getFeatures(state, action):
+            self.weights[i] += self.alpha * diff * self.featExtractor.getFeatures(state, action)[i]
+
+        # util.raiseNotDefined()
 
     def final(self, state):
         "Called at the end of each game."
@@ -183,4 +225,6 @@ class ApproximateQAgent(PacmanQAgent):
         if self.episodesSoFar == self.numTraining:
             # you might want to print your weights here for debugging
             "*** YOUR CODE HERE ***"
+            for i in self.weights:
+                print i, self.weights[i]
             pass
