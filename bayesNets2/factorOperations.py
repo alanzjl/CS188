@@ -101,7 +101,45 @@ def joinFactors(factors):
 
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    unconVars = []
+    varDomainDict = {}
+    for factor in factors:
+        for var in factor.unconditionedVariables():
+            if var not in unconVars and var not in unconVars:
+                unconVars.append(var)
+            if var not in varDomainDict:
+                varDomainDict[var] = factor.variableDomainsDict()[var]
+    conVars = []
+    for factor in factors:
+        for var in factor.conditionedVariables():
+            if var not in unconVars and var not in conVars:
+                conVars.append(var)
+            if var not in varDomainDict:
+                varDomainDict[var] = factor.variableDomainsDict()[var]
+
+    res = Factor(unconVars, conVars, varDomainDict)
+
+    for assignment in res.getAllPossibleAssignmentDicts():
+        res.setProbability(assignment, 1.)
+    for factor in factors:
+        factorAssigns = factor.getAllPossibleAssignmentDicts()
+        for assignment in res.getAllPossibleAssignmentDicts():
+            for factorAssign in factorAssigns:
+                if superDict(assignment, factorAssign):
+                    res.setProbability(assignment,
+                                           factor.getProbability(factorAssign)
+                                           * res.getProbability(assignment))
+
+    return res
+
+    # util.raiseNotDefined()
+
+def superDict(d1, d2):
+    '''Whether d1 is d2's supper dict'''
+    for key in d2:
+        if d1[key] != d2[key]:
+            return False
+    return True
 
 
 def eliminateWithCallTracking(callTrackingList=None):
@@ -150,7 +188,16 @@ def eliminateWithCallTracking(callTrackingList=None):
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        conVars = factor.conditionedVariables()
+        unconVars = [a for a in factor.unconditionedVariables() if a != eliminationVariable]
+
+        res = Factor(unconVars, conVars, factor.variableDomainsDict())
+        for assignment in res.getAllPossibleAssignmentDicts():
+            for factorAssign in factor.getAllPossibleAssignmentDicts():
+                if superDict(factorAssign, assignment):
+                    res.setProbability(assignment,
+                                       factor.getProbability(factorAssign) + res.getProbability(assignment))
+        return res
 
     return eliminate
 
@@ -205,5 +252,33 @@ def normalize(factor):
                             str(factor))
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    domain = factor.variableDomainsDict()
+    conVars = [a for a in factor.conditionedVariables()]
+    unconVars = factor.unconditionedVariables()
+    newunconVars = []
+    eleVars = []
+    for var in unconVars:
+        if len(domain[var]) == 1:
+            conVars.append(var)
+            eleVars.append(var)
+        else:
+            newunconVars.append(var)
+
+    res = Factor(newunconVars, conVars, factor.variableDomainsDict())
+    probList = [factor.getProbability(a) for a in factor.getAllPossibleAssignmentDicts()]
+    if sum(probList) < 1e-10:
+        return None
+
+    for assignment in res.getAllPossibleAssignmentDicts():
+        res.setProbability(assignment, factor.getProbability(assignment) / sum(probList))
+
+    for var in eleVars:
+        tmpSum = 0.
+        for assignment in res.getAllPossibleAssignmentDicts():
+            if superDict(assignment, {var: domain[var][0]}):
+                tmpSum += res.getProbability(assignment)
+        for assignment in res.getAllPossibleAssignmentDicts():
+            res.setProbability(assignment, res.getProbability(assignment) / tmpSum)
+
+    return res
 
