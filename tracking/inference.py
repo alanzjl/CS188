@@ -179,6 +179,15 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
+        if noisyDistance == None and ghostPosition == jailPosition:
+            return 1.
+        elif noisyDistance != None and ghostPosition == jailPosition:
+            return 0.
+        elif noisyDistance == None and ghostPosition != jailPosition:
+            return 0.
+        else:
+            trueDistance = manhattanDistance(pacmanPosition, ghostPosition)
+            return busters.getObservationProbability(noisyDistance, trueDistance)
 
     def setGhostPosition(self, gameState, ghostPosition, index):
         """
@@ -286,6 +295,19 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
+        prob = []
+        for p in self.allPositions:
+            pCond = self.getObservationProb(observation, gameState.getPacmanPosition(), p, self.getJailPosition())
+            prob.append(pCond * self.beliefs[p])
+        pObserv = sum(prob)
+        if pObserv == 0:
+            for p in self.allPositions:
+                self.beliefs[p] = 0.
+            return
+        cnt = 0
+        for p in self.allPositions:
+            self.beliefs[p] = prob[cnt] / pObserv
+            cnt += 1
         self.beliefs.normalize()
 
     def elapseTime(self, gameState):
@@ -298,6 +320,16 @@ class ExactInference(InferenceModule):
         current position is known.
         """
         "*** YOUR CODE HERE ***"
+        tabs = []
+        for p in self.allPositions:
+            newPosDist = self.getPositionDistribution(gameState, p)
+            for _p in self.allPositions:
+                newPosDist[_p] *= self.beliefs[p]
+            tabs.append(newPosDist)
+        for p in self.allPositions:
+            self.beliefs[p] = sum([x[p] for x in tabs])
+        self.beliefs.normalize()
+
 
     def getBeliefDistribution(self):
         return self.beliefs
