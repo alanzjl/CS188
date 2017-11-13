@@ -142,17 +142,16 @@ class GreedyBustersAgent(BustersAgent):
              if livingGhosts[i+1]]
         "*** YOUR CODE HERE ***"
         ghosts = []
-        for g in livingGhosts:
-            dist = livingGhostPositionDistributions[g]
+        for dist in livingGhostPositionDistributions:
             max = 0.
             point = None
-            for p in g.allPositions:
+            for p in dist.keys():
                 if dist[p] > max:
                     max = dist[p]
                     point = p
             ghosts.append(point)
         ghost = None
-        dist = self.distancer.getDistance(ghosts[0], pacmanPosition)
+        dist = 1e10
         for g in ghosts:
             nDist = self.distancer.getDistance(g, pacmanPosition)
             if nDist < dist:

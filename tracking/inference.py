@@ -350,12 +350,16 @@ class ParticleFilter(InferenceModule):
         """
         Initialize a list of particles. Use self.numParticles for the number of
         particles. Use self.legalPositions for the legal board positions where
-        a particle could be located. Particles should be evenly (not randomly)
+        a particle could be located. Partaicles should be evenly (not randomly)
         distributed across positions in order to ensure a uniform prior. Use
         self.particles for the list of particles.
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
+        num = self.numParticles / len(self.legalPositions)
+        for i in self.legalPositions:
+            for t in range(num):
+                self.particles.append(i)
 
     def observeUpdate(self, observation, gameState):
         """
@@ -370,6 +374,20 @@ class ParticleFilter(InferenceModule):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
+        nParticles = []
+        parProb = DiscreteDistribution()
+        belief = self.getBeliefDistribution()
+        for i in self.particles:
+            parProb[i] = belief[i] * self.getObservationProb(observation, gameState.getPacmanPosition(), i, self.getJailPosition())
+        pObserv = parProb.total()
+        if (parProb.total() == 0):
+            self.initializeUniformly(gameState)
+            return
+        for i in parProb.keys():
+            parProb[i] /= float(pObserv)
+        for i in range(len(self.particles)):
+            nParticles.append(parProb.sample())
+        self.particles = nParticles
 
     def elapseTime(self, gameState):
         """
@@ -377,6 +395,11 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
+        nParticles = []
+        for p in self.particles:
+            newPosDist = self.getPositionDistribution(gameState, p)
+            nParticles.append(newPosDist.sample())
+        self.particles = nParticles
 
     def getBeliefDistribution(self):
         """
@@ -385,6 +408,16 @@ class ParticleFilter(InferenceModule):
         essentially converts a list of particles into a belief distribution.
         """
         "*** YOUR CODE HERE ***"
+        numPar = len(self.particles)
+        belief = DiscreteDistribution()
+        '''
+        for i in self.legalPositions:
+            belief[i] = self.particles.count(i) / float(numPar)
+        '''
+        for i in self.particles:
+            if belief[i] == 0:
+                belief[i] = self.particles.count(i) / float(numPar)
+        return belief
 
 
 class JointParticleFilter(ParticleFilter):
@@ -412,6 +445,13 @@ class JointParticleFilter(ParticleFilter):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
+        #print self.numGhosts, len(self.legalPositions), self.numParticles
+        tab = list(itertools.product(self.legalPositions, repeat=self.numGhosts))
+        random.shuffle(tab)
+        for i in range(self.numParticles):
+            self.particles.append(tab[i % len(tab)])
+
+
 
     def addGhostAgent(self, agent):
         """
@@ -444,6 +484,21 @@ class JointParticleFilter(ParticleFilter):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
+        parProb = DiscreteDistribution()
+        belief = self.getBeliefDistribution()
+        nParticles = []
+        for i in self.particles:
+            parProb[i] = belief[i]
+            for g in range(self.numGhosts):
+                parProb[i] *= self.getObservationProb(observation[g], gameState.getPacmanPosition(), i[g], self.getJailPosition(g))
+        pObserv = parProb.total()
+        if pObserv == 0:
+            self.initializeUniformly(gameState)
+            return
+        for i in range(len(self.particles)):
+            nParticles.append(parProb.sample())
+        self.particles = nParticles
+
 
     def elapseTime(self, gameState):
         """
@@ -451,12 +506,38 @@ class JointParticleFilter(ParticleFilter):
         gameState.
         """
         newParticles = []
+        from copy import deepcopy
         for oldParticle in self.particles:
             newParticle = list(oldParticle)  # A list of ghost positions
 
             # now loop through and update each entry in newParticle...
             "*** YOUR CODE HERE ***"
+            dicts = []
+            for g in range(self.numGhosts):
+                posDist = self.getPositionDistribution(gameState, newParticle, g, self.ghostAgents[g])
+                # print posDist.keys()
+                dicts.append(posDist)
 
+            dist = DiscreteDistribution()
+            parList = [ [x] for x in dicts[0].keys()]
+            L = []
+            for i in range(len(dicts) - 1):
+                for d in dicts[i+1].keys():
+                    for p in parList:
+                        t = deepcopy(p)
+                        t.append(d)
+                        L.append(t)
+                parList = L
+            #print parList
+            #parList = list(itertools.product(dicts[0].keys(), repeat=len(dicts)))
+            #print dicts
+            for p in parList:
+                P = 1.0
+                for it in range(len(dicts)):
+                    P *= dicts[it][p[it]]
+                dist[tuple(p)] = P
+            #print dist
+            newParticle = dist.sample()
             """*** END YOUR CODE HERE ***"""
             newParticles.append(tuple(newParticle))
         self.particles = newParticles
