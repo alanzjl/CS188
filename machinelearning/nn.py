@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def main():
     """
     This is sample code for linear regression, which demonstrates how to use the
