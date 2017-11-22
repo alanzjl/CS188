@@ -260,10 +260,14 @@ class Add(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        x, y = inputs
+        return x + y
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        x, y = inputs
+        return [gradient, gradient]
 
 class MatrixMultiply(FunctionNode):
     """
@@ -278,10 +282,14 @@ class MatrixMultiply(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        A, B = inputs
+        return A.dot(B)
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        A, B = inputs
+        return [gradient.dot(B.T), A.T.dot(gradient)]
 
 class MatrixVectorAdd(FunctionNode):
     """
@@ -296,10 +304,14 @@ class MatrixVectorAdd(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        A, x = inputs
+        return A + x
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        A, x = inputs
+        return [gradient, gradient.sum(axis = 0)]
 
 class ReLU(FunctionNode):
     """
@@ -314,10 +326,14 @@ class ReLU(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        x = inputs[0]
+        return np.maximum(x, np.zeros_like(x))
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        x = inputs[0]
+        return [(x > 0) * gradient]
 
 class SquareLoss(FunctionNode):
     """
@@ -334,10 +350,14 @@ class SquareLoss(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        a, b = inputs
+        return np.mean(0.5 * ((a - b) ** 2))
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        a, b = inputs
+        return [(a - b) * gradient / a.size, (b - a) * gradient / a.size]
 
 class SoftmaxLoss(FunctionNode):
     """
