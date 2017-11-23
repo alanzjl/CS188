@@ -199,14 +199,16 @@ class DigitClassificationModel(Model):
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
         self.learning_rate = 0.7
-        self.m0 = nn.Variable(784, 512)
-        self.b0 = nn.Variable(512)
-        self.m1 = nn.Variable(512, 128)
+        self.m0 = nn.Variable(784, 256)
+        self.b0 = nn.Variable(256)
+        self.m1 = nn.Variable(256, 128)
         self.b1 = nn.Variable(128)
-        self.m2 = nn.Variable(128, 64)
-        self.b2 = nn.Variable(64)
-        self.m3 = nn.Variable(64, 10)
-        self.b3 = nn.Variable(10)
+        self.m2 = nn.Variable(128, 128)
+        self.b2 = nn.Variable(128)
+        self.m3 = nn.Variable(128, 32)
+        self.b3 = nn.Variable(32)
+        self.m4 = nn.Variable(32, 10)
+        self.b4 = nn.Variable(10)
 
     def run(self, x, y=None):
         """
@@ -231,7 +233,8 @@ class DigitClassificationModel(Model):
             (if y is None) A (batch_size x 10) numpy array of scores (aka logits)
         """
         "*** YOUR CODE HERE ***"
-        graph = nn.Graph([self.m0, self.b0, self.m1, self.b1, self.m2, self.b2, self.m3, self.b3])
+        graph = nn.Graph([self.m0, self.b0, self.m1, self.b1, self.m2,
+                          self.b2, self.m3, self.b3, self.m4, self.b4])
         input_x = nn.Input(graph, x)
 
         t = nn.MatrixMultiply(graph, input_x, self.m0)
@@ -245,6 +248,9 @@ class DigitClassificationModel(Model):
         t = nn.ReLU(graph, t)
         t = nn.MatrixMultiply(graph, t, self.m3)
         t = nn.MatrixVectorAdd(graph, t, self.b3)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m4)
+        t = nn.MatrixVectorAdd(graph, t, self.b4)
 
         if y is not None:
             "*** YOUR CODE HERE ***"
