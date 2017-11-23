@@ -199,12 +199,12 @@ class DigitClassificationModel(Model):
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
         self.learning_rate = 0.7
-        self.m0 = nn.Variable(784, 30)
-        self.b0 = nn.Variable(30)
-        self.m1 = nn.Variable(30, 20)
-        self.b1 = nn.Variable(20)
-        self.m2 = nn.Variable(20, 10)
-        self.b2 = nn.Variable(10)
+        self.m0 = nn.Variable(784, 300)
+        self.b0 = nn.Variable(300)
+        self.m1 = nn.Variable(300, 40)
+        self.b1 = nn.Variable(40)
+        self.m2 = nn.Variable(40, 20)
+        self.b2 = nn.Variable(20)
         self.m3 = nn.Variable(10, 10)
         self.b3 = nn.Variable(10)
 
