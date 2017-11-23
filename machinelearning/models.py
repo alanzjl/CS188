@@ -199,13 +199,13 @@ class DigitClassificationModel(Model):
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
         self.learning_rate = 0.7
-        self.m0 = nn.Variable(784, 256)
-        self.b0 = nn.Variable(256)
-        self.m1 = nn.Variable(256, 64)
-        self.b1 = nn.Variable(64)
-        self.m2 = nn.Variable(64, 32)
-        self.b2 = nn.Variable(32)
-        self.m3 = nn.Variable(32, 10)
+        self.m0 = nn.Variable(784, 300)
+        self.b0 = nn.Variable(300)
+        self.m1 = nn.Variable(300, 40)
+        self.b1 = nn.Variable(40)
+        self.m2 = nn.Variable(40, 20)
+        self.b2 = nn.Variable(20)
+        self.m3 = nn.Variable(10, 10)
         self.b3 = nn.Variable(10)
 
     def run(self, x, y=None):
