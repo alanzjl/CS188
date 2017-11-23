@@ -198,7 +198,7 @@ class DigitClassificationModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
-        self.learning_rate = 0.7
+        self.learning_rate = 0.4
         self.m0 = nn.Variable(784, 256)
         self.b0 = nn.Variable(256)
         self.m1 = nn.Variable(256, 128)
@@ -287,7 +287,7 @@ class DeepQModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
-        self.learning_rate = 0.1
+        self.learning_rate = 0.5
         self.m0 = nn.Variable(self.state_size, 32)
         self.b0 = nn.Variable(32)
         self.m1 = nn.Variable(32, 32)
