@@ -255,7 +255,7 @@ class DigitClassificationModel(Model):
         if y is not None:
             "*** YOUR CODE HERE ***"
             input_y = nn.Input(graph, y)
-            loss = nn.SquareLoss(graph, t, input_y)
+            loss = nn.SoftmaxLoss(graph, t, input_y)
             return graph
         else:
             "*** YOUR CODE HERE ***"
@@ -282,6 +282,15 @@ class DeepQModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.7
+        self.m0 = nn.Variable(self.state_size, 128)
+        self.b0 = nn.Variable(128)
+        self.m1 = nn.Variable(128, 128)
+        self.b1 = nn.Variable(128)
+        self.m2 = nn.Variable(128, 16)
+        self.b2 = nn.Variable(16)
+        self.m3 = nn.Variable(16, self.state_size)
+        self.b3 = nn.Variable(self.state_size)
 
     def run(self, states, Q_target=None):
         """
@@ -309,11 +318,32 @@ class DeepQModel(Model):
                 scores, for the two actions
         """
         "*** YOUR CODE HERE ***"
+        graph = nn.Graph([self.m0, self.b0, self.m1, self.b1, self.m2,
+                          self.b2, self.m3, self.b3])
+        input_x = nn.Input(graph, x)
+
+        t = nn.MatrixMultiply(graph, input_x, self.m0)
+        t = nn.MatrixVectorAdd(graph, t, self.b0)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m1)
+        t = nn.MatrixVectorAdd(graph, t, self.b1)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m2)
+        t = nn.MatrixVectorAdd(graph, t, self.b2)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m3)
+        t = nn.MatrixVectorAdd(graph, t, self.b3)
 
         if Q_target is not None:
             "*** YOUR CODE HERE ***"
+            input_y = nn.Input(graph, y)
+            loss = nn.SquareLoss(graph, t, input_y)
+            return graph
         else:
             "*** YOUR CODE HERE ***"
+
+            res = graph.outputs[graph.get_nodes()[-1]]
+            return res
 
     def get_action(self, state, eps):
         """
