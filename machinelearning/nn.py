@@ -76,6 +76,13 @@ class Graph(object):
         so don't forget to call `self.add` on each of the variables.
         """
         "*** YOUR CODE HERE ***"
+        self.nodes = []
+        self.outputs = {}
+        self.gradients = {}
+        self.variableSize = len(variables)
+        for var in variables:
+            self.add(var)
+            self.outputs[var] = var.forward([])
 
     def get_nodes(self):
         """
@@ -86,6 +93,7 @@ class Graph(object):
         Returns: a list of nodes
         """
         "*** YOUR CODE HERE ***"
+        return self.nodes
 
     def get_inputs(self, node):
         """
@@ -97,6 +105,10 @@ class Graph(object):
         Hint: every node has a `.get_parents()` method
         """
         "*** YOUR CODE HERE ***"
+        res = []
+        for p in node.get_parents():
+            res.append(self.get_output(p))
+        return res
 
     def get_output(self, node):
         """
@@ -106,6 +118,7 @@ class Graph(object):
         Returns: a numpy array or a scalar
         """
         "*** YOUR CODE HERE ***"
+        return self.outputs[node]
 
     def get_gradient(self, node):
         """
@@ -121,6 +134,7 @@ class Graph(object):
         Returns: a numpy array
         """
         "*** YOUR CODE HERE ***"
+        return self.gradients[node]
 
     def add(self, node):
         """
@@ -135,6 +149,9 @@ class Graph(object):
         accumulator for the node, with correct shape.
         """
         "*** YOUR CODE HERE ***"
+        self.nodes.append(node)
+        self.outputs[node] = node.forward(self.get_inputs(node))
+        self.gradients[node] = np.zeros_like(self.get_output(node))
 
     def backprop(self):
         """
@@ -152,6 +169,15 @@ class Graph(object):
         assert np.asarray(self.get_output(loss_node)).ndim == 0
 
         "*** YOUR CODE HERE ***"
+        self.gradients[loss_node] = 1.
+        for i in reversed(range(len(self.get_nodes()))):
+            node = self.get_nodes()[i]
+            grad = node.backward(self.get_inputs(node),self.gradients[node])
+            cnt = 0
+            for p in node.get_parents():
+                self.gradients[p] += grad[cnt]
+                cnt += 1
+
 
     def step(self, step_size):
         """
@@ -162,6 +188,10 @@ class Graph(object):
         Hint: each Variable has a `.data` attribute
         """
         "*** YOUR CODE HERE ***"
+        for i in range(self.variableSize):
+            node = self.nodes[i]
+            node.data -= self.gradients[node] * step_size
+
 
 class DataNode(object):
     """

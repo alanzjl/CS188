@@ -415,10 +415,12 @@ def create_node_tests():
         m = np_random.randint(1, 10)
         u = np_random.uniform(-10, 10, m)
         v = np_random.uniform(-10, 10, u.shape)
+        U = u[:, np.newaxis]
+        V = v[:, np.newaxis]
         A = np_random.uniform(-10, 10, (n, m))
         B = np_random.uniform(-10, 10, A.shape)
-        vals.append((u, v, A, B, A.T))
-    u, v, A, B, A_T = zip(*vals)
+        vals.append((u, v, U, V, A, B, A.T))
+    u, v, U, V, A, B, A_T = zip(*vals)
 
     test_dict = {}
     with open('node_checks.pkl', 'rb') as f:
@@ -457,8 +459,8 @@ def create_node_tests():
     create_test('Add', (u, v), (A, B), points=1)
     create_test('MatrixMultiply', (A_T, B), points=2)
     create_test('MatrixVectorAdd', (A, v), points=2)
-    create_test('ReLU', (u,), points=1)
-    create_test('SquareLoss', (u, v), points=1)
+    create_test('ReLU', (u,), (A,), points=1)
+    create_test('SquareLoss', (U, V), (A, B), points=1)
 
 create_node_tests()
 
