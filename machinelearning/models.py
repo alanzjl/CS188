@@ -40,6 +40,13 @@ class RegressionModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.1
+        self.m0 = nn.Variable(1, 20)
+        self.b0 = nn.Variable(20)
+        self.m1 = nn.Variable(20, 5)
+        self.b1 = nn.Variable(5)
+        self.m2 = nn.Variable(5, 1)
+        self.b2 = nn.Variable(1)
 
     def run(self, x, y=None):
         """
@@ -61,6 +68,17 @@ class RegressionModel(Model):
         Note: DO NOT call backprop() or step() inside this method!
         """
         "*** YOUR CODE HERE ***"
+        graph = nn.Graph([self.m0, self.b0, self.m1, self.b1, self.m2, self.b2])
+        input_x = nn.Input(graph, x)
+
+        t = nn.MatrixMultiply(graph, input_x, self.m0)
+        t = nn.MatrixVectorAdd(graph, t, self.b0)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m1)
+        t = nn.MatrixVectorAdd(graph, t, self.b1)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m2)
+        t = nn.MatrixVectorAdd(graph, t, self.b2)
 
         if y is not None:
             # At training time, the correct output `y` is known.
@@ -68,10 +86,14 @@ class RegressionModel(Model):
             # that the node belongs to. The loss node must be the last node
             # added to the graph.
             "*** YOUR CODE HERE ***"
+            input_y = nn.Input(graph, y)
+            loss = nn.SquareLoss(graph, t, input_y)
+            return graph
         else:
             # At test time, the correct output is unknown.
             # You should instead return your model's prediction as a numpy array
             "*** YOUR CODE HERE ***"
+            return graph.outputs[graph.get_nodes()[-1]]
 
 class OddRegressionModel(Model):
     """
@@ -89,6 +111,13 @@ class OddRegressionModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.1
+        self.m0 = nn.Variable(1, 10)
+        self.b0 = nn.Variable(10)
+        self.m1 = nn.Variable(10, 5)
+        self.b1 = nn.Variable(5)
+        self.m2 = nn.Variable(5, 1)
+        self.b2 = nn.Variable(1)
 
     def run(self, x, y=None):
         """
@@ -110,6 +139,21 @@ class OddRegressionModel(Model):
         Note: DO NOT call backprop() or step() inside this method!
         """
         "*** YOUR CODE HERE ***"
+        sign = x < 0
+        x = np.where(sign, -x, x)
+
+        graph = nn.Graph([self.m0, self.b0, self.m1, self.b1, self.m2, self.b2])
+        input_x = nn.Input(graph, x)
+
+        t = nn.MatrixMultiply(graph, input_x, self.m0)
+        t = nn.MatrixVectorAdd(graph, t, self.b0)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m1)
+        t = nn.MatrixVectorAdd(graph, t, self.b1)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m2)
+        t = nn.MatrixVectorAdd(graph, t, self.b2)
+
 
         if y is not None:
             # At training time, the correct output `y` is known.
@@ -117,10 +161,21 @@ class OddRegressionModel(Model):
             # that the node belongs to. The loss node must be the last node
             # added to the graph.
             "*** YOUR CODE HERE ***"
+            y = np.where(sign, -y, y)
+
+            input_y = nn.Input(graph, y)
+            loss = nn.SquareLoss(graph, t, input_y)
+            return graph
+
         else:
             # At test time, the correct output is unknown.
             # You should instead return your model's prediction as a numpy array
             "*** YOUR CODE HERE ***"
+            res = graph.outputs[graph.get_nodes()[-1]]
+            res = np.where(sign, -res, res)
+            res = np.where(x == 0, np.zeros_like(res), res)
+            return res
+
 
 class DigitClassificationModel(Model):
     """
@@ -143,6 +198,15 @@ class DigitClassificationModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.7
+        self.m0 = nn.Variable(784, 30)
+        self.b0 = nn.Variable(30)
+        self.m1 = nn.Variable(30, 20)
+        self.b1 = nn.Variable(20)
+        self.m2 = nn.Variable(20, 10)
+        self.b2 = nn.Variable(10)
+        self.m3 = nn.Variable(10, 10)
+        self.b3 = nn.Variable(10)
 
     def run(self, x, y=None):
         """
@@ -167,11 +231,31 @@ class DigitClassificationModel(Model):
             (if y is None) A (batch_size x 10) numpy array of scores (aka logits)
         """
         "*** YOUR CODE HERE ***"
+        graph = nn.Graph([self.m0, self.b0, self.m1, self.b1, self.m2, self.b2, self.m3, self.b3])
+        input_x = nn.Input(graph, x)
+
+        t = nn.MatrixMultiply(graph, input_x, self.m0)
+        t = nn.MatrixVectorAdd(graph, t, self.b0)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m1)
+        t = nn.MatrixVectorAdd(graph, t, self.b1)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m2)
+        t = nn.MatrixVectorAdd(graph, t, self.b2)
+        t = nn.ReLU(graph, t)
+        t = nn.MatrixMultiply(graph, t, self.m3)
+        t = nn.MatrixVectorAdd(graph, t, self.b3)
 
         if y is not None:
             "*** YOUR CODE HERE ***"
+            input_y = nn.Input(graph, y)
+            loss = nn.SquareLoss(graph, t, input_y)
+            return graph
         else:
             "*** YOUR CODE HERE ***"
+            res = graph.outputs[graph.get_nodes()[-1]]
+            return res
+
 
 
 class DeepQModel(Model):
