@@ -288,13 +288,13 @@ class DeepQModel(Model):
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
         self.learning_rate = 0.01
-        self.m0 = nn.Variable(self.state_size, 32)
-        self.b0 = nn.Variable(32)
-        self.m1 = nn.Variable(32, 32)
+        self.m0 = nn.Variable(self.state_size, 64)
+        self.b0 = nn.Variable(64)
+        self.m1 = nn.Variable(64, 32)
         self.b1 = nn.Variable(32)
-        self.m2 = nn.Variable(32, 16)
-        self.b2 = nn.Variable(16)
-        self.m3 = nn.Variable(16, self.num_actions)
+        self.m2 = nn.Variable(32, 32)
+        self.b2 = nn.Variable(32)
+        self.m3 = nn.Variable(32, self.num_actions)
         self.b3 = nn.Variable(self.num_actions)
 
     def run(self, states, Q_target=None):
@@ -389,7 +389,7 @@ class LanguageIDModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
-        self.learning_rate = 0.2
+        self.learning_rate = 0.006
         self.d = 256
         self.mm0 = nn.Variable(self.num_chars, self.d)
         #self.mm1 = nn.Variable(self.d, 128)
@@ -397,15 +397,13 @@ class LanguageIDModel(Model):
         self.b0 = nn.Variable(self.d)
         self.m1 = nn.Variable(self.d, self.d)
         self.b1 = nn.Variable(self.d)
+        self.m2 = nn.Variable(self.d, self.d)
+        self.b2 = nn.Variable(self.d)
 
-        self.bm0 = nn.Variable(self.d, 128)
-        self.bb0 = nn.Variable(128)
-        self.bm1 = nn.Variable(128, 128)
-        self.bb1 = nn.Variable(128)
-        self.bm2 = nn.Variable(128, 128)
-        self.bb2 = nn.Variable(128)
-        self.bm3 = nn.Variable(128, len(self.languages))
-        self.bb3 = nn.Variable(len(self.languages))
+        self.bm0 = nn.Variable(self.d, 64)
+        self.bb0 = nn.Variable(64)
+        self.bm1 = nn.Variable(64, len(self.languages))
+        self.bb1 = nn.Variable(len(self.languages))
 
     def run(self, xs, y=None):
         """
@@ -447,37 +445,35 @@ class LanguageIDModel(Model):
         batch_size = xs[0].shape[0]
 
         "*** YOUR CODE HERE ***"
-        graph = nn.Graph([self.mm0, self.m0, self.b0, self.m1, self.b1,
-                          self.bm0, self.bb0, self.bm1, self.bb1, self.bm2, self.bb2,
-                          self.bm3, self.bb3])
+        graph = nn.Graph([self.mm0, self.m0, self.b0, self.m1, self.b1, self.m2, self.b2,
+                          self.bm0, self.bb0, self.bm1, self.bb1])
         t = None
-        self.h = np.zeros((batch_size, self.d))
+        self.h0 = np.zeros((batch_size, self.d))
+
+        t = nn.Input(graph, self.h0)
+
         for x in xs:
             input_x = nn.Input(graph, x)
-            input_d = nn.Input(graph, self.h)
+            input_x = nn.MatrixMultiply(graph, input_x, self.mm0)
 
-            tx = nn.MatrixMultiply(graph, input_x, self.mm0)
-            t = nn.MatrixVectorAdd(graph, tx, input_d)
-            t = nn.ReLU(graph, t)
+            t = nn.MatrixVectorAdd(graph, t, input_x)
+            #t = nn.ReLU(graph, t)
             t = nn.MatrixMultiply(graph, t, self.m0)
             t = nn.MatrixVectorAdd(graph, t, self.b0)
             t = nn.ReLU(graph, t)
             t = nn.MatrixMultiply(graph, t, self.m1)
             t = nn.MatrixVectorAdd(graph, t, self.b1)
-            self.h = graph.outputs[t]
+            t = nn.ReLU(graph, t)
+            t = nn.MatrixMultiply(graph, t, self.m2)
+            t = nn.MatrixVectorAdd(graph, t, self.b2)
+            #t = nn.ReLU(graph, t)
+            #self.h = graph.outputs[t]
 
-        t = nn.ReLU(graph, t)
+        #t = nn.Input(graph, self.h)
         t = nn.MatrixMultiply(graph, t, self.bm0)
         t = nn.MatrixVectorAdd(graph, t, self.bb0)
-        t = nn.ReLU(graph, t)
         t = nn.MatrixMultiply(graph, t, self.bm1)
         t = nn.MatrixVectorAdd(graph, t, self.bb1)
-        t = nn.ReLU(graph, t)
-        t = nn.MatrixMultiply(graph, t, self.bm2)
-        t = nn.MatrixVectorAdd(graph, t, self.bb2)
-        t = nn.ReLU(graph, t)
-        t = nn.MatrixMultiply(graph, t, self.bm3)
-        t = nn.MatrixVectorAdd(graph, t, self.bb3)
 
         if y is not None:
             "*** YOUR CODE HERE ***"
